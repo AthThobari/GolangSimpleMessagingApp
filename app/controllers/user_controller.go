@@ -102,6 +102,9 @@ func Login(ctx *fiber.Ctx) error {
 	})
 
 	if err != nil {
+		errResponse := fmt.Errorf("failed insert user session: %v", err)
+		fmt.Println(errResponse)
+		return response.SendFailureResponse(ctx, fiber.StatusNotFound, "terjadi kesalahan pada sistem", nil)
 	}
 
 	resp.Username = user.Username
@@ -109,4 +112,15 @@ func Login(ctx *fiber.Ctx) error {
 	resp.Token = token
 	resp.RefreshToken = refreshToken
 	return response.SendsuccessResponse(ctx, resp)
+}
+
+func Logout(ctx *fiber.Ctx) error {
+	token := ctx.Get("Authorization")
+	err := repository.DeleteUserSessionByToken(ctx.Context(), token)
+	if err != nil {
+		errResponse := fmt.Errorf("failed delete user session: %v", err)
+		fmt.Println(errResponse)
+		return response.SendFailureResponse(ctx, fiber.StatusInternalServerError, "terjadi kesalahan pada sistem", nil)
+	}
+	return response.SendsuccessResponse(ctx, nil)
 }
