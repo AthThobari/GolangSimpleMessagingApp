@@ -15,9 +15,9 @@ type ClaimToken struct {
 	jwt.RegisteredClaims
 }
 
-var mapTypeToken = map[string]time.Duration{
+var MapTypeToken = map[string]time.Duration{
 	"token": time.Hour * 3,
-	"refres_token": time.Hour * 72,
+	"refresh_token": time.Hour * 72,
 }
 
 var jwtSecret = []byte(env.GetEnv("APP_SECRET", ""))
@@ -29,7 +29,7 @@ func GenerateToken(ctx context.Context, username, fullname, tokenType string) (s
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: env.GetEnv("APP_NAME", ""),
 			IssuedAt: jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(mapTypeToken[tokenType])),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(MapTypeToken[tokenType])),
 		},
 	}
 
