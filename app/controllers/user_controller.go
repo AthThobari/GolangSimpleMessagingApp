@@ -51,6 +51,7 @@ func Register(ctx *fiber.Ctx) error {
 func Login(ctx *fiber.Ctx) error {
 	loginReq := new(models.LoginRequest)
 	resp := models.LoginResponse{}
+	now := time.Now()
 
 	err := ctx.BodyParser(loginReq)
 	if err != nil {
@@ -90,16 +91,18 @@ func Login(ctx *fiber.Ctx) error {
 		fmt.Println(errResponse)
 		return response.SendFailureResponse(ctx, fiber.StatusNotFound, "terjadi kesalahan pada sistem", nil)
 	}
+	fmt.Println("Token duration:", jwt_token.MapTypeToken["token"])
+	fmt.Println("Refresh Token duration:", jwt_token.MapTypeToken["refresh_token"])
 
-	err = repository.InsertNewUserSession(ctx.Context(), &models.UserSession{
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-		UserID:       user.ID,
-		Token:        token,
-		RefreshToken: refreshToken,
-		TokenExpired: time.Now().Add(time.Hour * 3),
-		RefreshTokenExpired: time.Now().Add(time.Hour * 72),
-	})
+	userSession := models.UserSession{
+		UserID:              user.ID,
+		Token:               token,
+		RefreshToken:        refreshToken,
+		TokenExpired:        now.Add(jwt_token.MapTypeToken["token"]),
+		RefreshTokenExpired: now.Add(jwt_token.MapTypeToken["refresh_token"]),
+	}
+
+	err = repository.InsertNewUserSession(ctx.Context(), &userSession)
 
 	if err != nil {
 		errResponse := fmt.Errorf("failed insert user session: %v", err)
@@ -123,4 +126,29 @@ func Logout(ctx *fiber.Ctx) error {
 		return response.SendFailureResponse(ctx, fiber.StatusInternalServerError, "terjadi kesalahan pada sistem", nil)
 	}
 	return response.SendsuccessResponse(ctx, nil)
+}
+
+func RefreshToken(ctx *fiber.Ctx) error {
+	now := time.Now()
+	RefreshToken := ctx.Get("Authorization")
+	username := ctx.Locals("username").(string)
+	fullName := ctx.Locals("full_name").(string)
+
+	token, err := jwt_token.GenerateToken(ctx.Context(), username, fullName, "token")
+	if err != nil {
+		errResponse := fmt.Errorf("failed to generate token %v", err)
+		fmt.Println(errResponse)
+		return response.SendFailureResponse(ctx, fiber.StatusInternalServerError, "terjadi kesalahan pada sistem", nil)
+	}
+
+	err = repository.UpdateUserSessionToken(ctx.Context(), token, now.Add(jwt_token.MapTypeToken["token"]), RefreshToken)
+	if err != nil {
+		errResponse := fmt.Errorf("failed to update token: %v", err)
+		fmt.Println(errResponse)
+		return response.SendFailureResponse(ctx, fiber.StatusInternalServerError, "terjadi kesalahan pada sistem", nil)
+	}
+	
+	return response.SendsuccessResponse(ctx, fiber.Map{
+		"token": token,
+	})
 }
