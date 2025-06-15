@@ -1,10 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Hello From Fiber</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Messaging App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    #dashboard {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+    }
+
+    #chat-box {
+      flex: 1;
+      background-color: #f0f0f0;
+      padding: 10px;
+      overflow-y: scroll;
+      border-bottom: 1px solid #ccc;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      padding: 8px 10px;
+      margin: 5px 0;
+      background-color: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    #chat-controls {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background-color: #fff;
+      border-top: 1px solid #ccc;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #login-form {
+      padding: 20px;
+      max-width: 400px;
+      margin: 50px auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  {{ .FiberTitle }}
+
+  <div id="login-form">
+    <h2 id="login-status">Please log in</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="dashboard">
+    <h2>Welcome to the simple messaging app!</h2>
+    <button onclick="logout()">Logout</button>
+    
+    <!-- Chat Box (Full Size) -->
+    <div id="chat-box">
+      <ul id="messages">
+        <!-- Chat messages will appear here -->
+      </ul>
+    </div>
+
+    <!-- Message input and send button (Inline) -->
+    <div id="chat-controls">
+      <input type="text" id="message-input" placeholder="Type your message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    let socket;
+    let pendingMessages = [];
+    let retryLogoutCount = 0;
+
+    // Check if JWT is stored in sessionStorage
+    document.addEventListener('DOMContentLoaded', function() {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          console.log("Notification permission already granted.");
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              console.log("Notification permission granted.");
+            }
+          });
+        }
+      } else {
+        console.log('This browser does not support notifications.');
+      }
+      
+      const storedToken = sessionStorage.getItem('jwtToken');
+      if (storedToken) {
+        showDashboard();
+        setupWebSocket();
+      }
+    });
+
+    // Login function
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      fetch('/user/v1/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === "success" && data.data.token) {
+          sessionStorage.setItem('jwtToken', data.data.token);
+          sessionStorage.setItem('refreshToken', data.data.refresh_token);
+          sessionStorage.setItem('username', data.data.username);
+          sessionStorage.setItem('fullname', data.data.full_name);
+          document.getElementById('login-status').innerText = 'Login successful!';
+          showDashboard();
+          setupWebSocket();
+        } else {
+          document.getElementById('login-status').innerText = 'Login failed!';
+        }
+      })
+      .catch(err => {
+        document.getElementById('login-status').innerText = 'Error during login';
+      });
+    }
+
+    // Logout function
+    function logout() {
+      fetch('/user/v1/logout', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': sessionStorage.getItem('jwtToken')
+        }
+      })
+      .then(response => {
+        // If unauthorized, refresh token and retry logout
+        if (response.status === 401) {
+          retryLogoutCount++;
+          if (retryLogoutCount <= 3) {
+            return refreshToken().then(() => logout());
+          }
+          throw new Error("Max retry limit reached for logout.");
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.message === "success") {
+          sessionStorage.removeItem('jwtToken');
+          sessionStorage.removeItem('refreshToken');
+          sessionStorage.removeItem('username');
+          sessionStorage.removeItem('fullname');
+          window.alert("Logout successful!");
+          location.reload();
+        } else {
+          window.alert("Logout failed!");
+        }
+      })
+      .catch(err => {
+        window.alert("Logout failed!");
+      });
+    }
+
+    // Function to refresh the token
+    function refreshToken() {
+      return fetch('/user/v1/refresh-token', {
+        method: 'POST',
+        headers: {
+          'Authorization': sessionStorage.getItem('refreshToken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === "success" && data.data.token) {
+          sessionStorage.setItem('jwtToken', data.data.token);
+        }
+      })
+      .catch(err => {
+        console.error('Error refreshing token:', err);
+      });
+    }
+
+    // Function to fetch message history
+    function fetchMessageHistory() {
+      fetch('/message/v1/history', {
+        method: 'GET',
+        headers: {
+          'Authorization': `${sessionStorage.getItem('jwtToken')}` // Include JWT token for authorization
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Assuming the data format is an array of messages
+        data.data.forEach(message => {
+          addMessageToChat(message.from, message.message); // Function to display messages in chat
+        });
+      })
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+      });
+    }
+    
+
+    // Function to set up WebSocket connection
+    function setupWebSocket() {
+      socket = new WebSocket('ws://localhost:8080/message/v1/send'); // Replace with your WebSocket server URL
+
+      socket.onopen = function(event) {
+        console.log('Connected to WebSocket server.');
+        fetchMessageHistory()
+        pendingMessages.forEach(message => {
+          socket.send(message);
+        });
+        pendingMessages = [];
+      };
+
+      socket.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        showNotification(message.from, message.message);  
+        addMessageToChat(message.from, message.message);
+      };
+
+      socket.onclose = function(event) {
+        console.log('Disconnected from WebSocket server.');
+      };
+
+      socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+      };
+    }
+    
+    function showNotification(title, message) {
+      // Only show notifications if the user has granted permission and the page is not visible
+      if (Notification.permission === "granted") {
+        const notification = new Notification(title, {
+          body: message,
+          // icon: 'chat-icon.png'  // You can add a custom icon for the notification
+        });
+    
+        // Optional: Add click event to focus the window when the notification is clicked
+        notification.onclick = function() {
+          window.focus();
+        };
+      }
+    }
+
+    // Function to send a message via WebSocket
+    function sendMessage() {
+      const input = document.getElementById('message-input');
+      const message = input.value;
+
+      if (message.trim() !== '') {
+        const msgObject = {
+          from: sessionStorage.getItem('fullname'),
+          message: message
+        };
+
+        const messageToSend = JSON.stringify(msgObject);
+
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(messageToSend);
+        } else {
+          pendingMessages.push(messageToSend);
+        }
+
+        input.value = '';
+      }
+    }
+
+    // Function to add a message to the chat box
+    function addMessageToChat(from, message) {
+      const messagesList = document.getElementById('messages');
+      const newMessage = document.createElement('li');
+      newMessage.textContent = `${from}: ${message}`;
+      messagesList.appendChild(newMessage);
+
+      const chatBox = document.getElementById('chat-box');
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Function to show the dashboard
+    function showDashboard() {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'flex';
+    }
+  </script>
 </body>
 </html>
