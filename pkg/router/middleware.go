@@ -1,7 +1,7 @@
 package router
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,23 +13,23 @@ import (
 func MiddlewareValidateAuth(ctx *fiber.Ctx) error {
 	auth := ctx.Get("Authorization")
 	if auth == "" {
-		fmt.Println("authorization empty")
+		log.Println("authorization empty")
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
 	_, err := repository.GetUserSessionByToken(ctx.Context(), auth) 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 	claim, err := jwt_token.ValidateToken(ctx.Context(), auth)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
 	if time.Now().Unix() > claim.ExpiresAt.Unix() {
-		fmt.Println("jwt token is expired: ", claim.ExpiresAt)
+		log.Println("jwt token is expired: ", claim.ExpiresAt)
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
@@ -42,18 +42,18 @@ func MiddlewareValidateAuth(ctx *fiber.Ctx) error {
 func MiddlewareRefreshToken(ctx *fiber.Ctx) error {
 	auth := ctx.Get("Authorization")
 	if auth == "" {
-		fmt.Println("authorization empty")
+		log.Println("authorization empty")
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
 	claim, err := jwt_token.ValidateToken(ctx.Context(), auth)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
 	if time.Now().Unix() > claim.ExpiresAt.Unix() {
-		fmt.Println("jwt token is expired: ", claim.ExpiresAt)
+		log.Println("jwt token is expired: ", claim.ExpiresAt)
 		return response.SendFailureResponse(ctx, fiber.StatusUnauthorized, "unauthorized", nil)
 	}
 
