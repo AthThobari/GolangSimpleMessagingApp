@@ -1,0 +1,6 @@
+2025/07/02 11:05:20 &{0xc0002ce3f0 <nil> 0 0xc0003a4000 1}
+2025/07/02 11:05:21 successfully migrate database!
+2025/07/02 11:05:23 successfully connected to MongoDB
+2025/07/02 11:11:26 failed to parse jwt: token has invalid claims: token is expired
+2025/07/02 11:11:31 Token duration: 3h0m0s
+2025/07/02 11:11:31 Refresh Token duration: 72h0m0s
