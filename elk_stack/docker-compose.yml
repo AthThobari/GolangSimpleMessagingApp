@@ -58,3 +58,11 @@ services:
       - logstash
     networks:
       - elk
+
+volumes:
+  esdata:
+    driver: local
+
+networks:
+  elk:
+    driver: bridge
