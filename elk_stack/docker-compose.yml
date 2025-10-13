@@ -58,7 +58,7 @@
 #       - logstash
 #     networks:
 #       - elk
-
+# SERVICE_TOKEN elastic/kibana/kibana-token = AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjp1V1UtbXRRblFnNlRZc093S0E2aTZ3
 # volumes:
 #   esdata:
 #     driver: local
@@ -89,8 +89,7 @@ services:
     container_name: elk_stack-kibana-1
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=changeme  # nanti diganti dengan password hasil reset
+      - ELASTICSEARCH_SERVICEACCOUNT_TOKEN=AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjp1V1UtbXRRblFnNlRZc093S0E2aTZ3
     ports:
       - "5601:5601"
     networks:
