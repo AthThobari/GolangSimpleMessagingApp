@@ -81,6 +81,8 @@ services:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    networks:
+      - elk
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.10.2
@@ -88,13 +90,18 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=password  # nanti diganti dengan password asli
+      - ELASTICSEARCH_PASSWORD=changeme  # nanti diganti dengan password hasil reset
     ports:
       - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.10.2
     platform: linux/arm64
+    container_name: elk_stack-logstash-1
     ports:
       - "5044:5044"
     depends_on:
@@ -105,6 +112,7 @@ services:
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.10.2
     platform: linux/arm64
+    container_name: elk_stack-filebeat-1
     user: root
     depends_on:
       - logstash
