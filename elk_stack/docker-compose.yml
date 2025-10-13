@@ -2,6 +2,7 @@ version: "3.7"
 
 services:
   elasticsearch:
+    platform: linux/amd64
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
     environment:
       - node.name=elasticsearch
@@ -21,6 +22,7 @@ services:
       - elk
   
   logstash:
+    platform: linux/amd64
     image: docker.elastic.co/logstash/logstash:7.10.0
     volumes:
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
@@ -35,6 +37,7 @@ services:
       - elasticsearch
 
   kibana:
+    platform: linux/amd64
     image: docker.elastic.co/kibana/kibana:7.10.0
     ports:
       - "5601:5601"
@@ -44,6 +47,7 @@ services:
       - elasticsearch
 
   filebeat:
+    platform: linux/amd64
     image: docker.elastic.co/beats/filebeat:7.10.0
     user: root
     volumes:
