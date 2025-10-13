@@ -4,3 +4,14 @@
 2025/07/02 11:11:26 failed to parse jwt: token has invalid claims: token is expired
 2025/07/02 11:11:31 Token duration: 3h0m0s
 2025/07/02 11:11:31 Refresh Token duration: 72h0m0s
+2025/10/09 05:33:10 &{0xc0002c4480 <nil> 0 0xc000372780 1}
+2025/10/09 05:33:11 successfully migrate database!
+2025/10/09 05:37:39 &{0xc0002c82d0 <nil> 0 0xc00029c780 1}
+2025/10/09 05:37:39 successfully migrate database!
+2025/10/09 05:37:41 successfully connected to MongoDB
+2025/10/09 05:38:04 Token duration: 3h0m0s
+2025/10/09 05:38:04 Refresh Token duration: 72h0m0s
+2025/10/09 05:38:24 error payload:  websocket: close 1001 (going away)
+2025/10/09 05:40:18 Token duration: 3h0m0s
+2025/10/09 05:40:18 Refresh Token duration: 72h0m0s
+2025/10/09 05:40:24 failed to parse jwt: token has invalid claims: token is expired
