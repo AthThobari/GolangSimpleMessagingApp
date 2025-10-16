@@ -15,3 +15,18 @@
 2025/10/09 05:40:18 Token duration: 3h0m0s
 2025/10/09 05:40:18 Refresh Token duration: 72h0m0s
 2025/10/09 05:40:24 failed to parse jwt: token has invalid claims: token is expired
+2025/10/14 14:40:58 &{0xc00034e480 <nil> 0 0xc00026a000 1}
+2025/10/14 14:44:42 &{0xc0000fe480 <nil> 0 0xc00030ab40 1}
+2025/10/14 14:45:13 &{0xc0002bc480 <nil> 0 0xc0002c8b40 1}
+2025/10/14 14:46:18 &{0xc0000f8480 <nil> 0 0xc0002a6b40 1}
+2025/10/14 14:50:56 &{0xc0000aa480 <nil> 0 0xc0000bab40 1}
+2025/10/14 15:15:18 &{0xc00012e750 <nil> 0 0xc00043c000 1}
+2025/10/14 15:19:00 &{0xc0000a8360 <nil> 0 0xc0000ee3c0 1}
+2025/10/14 15:19:01 successfully migrate database!
+2025/10/14 15:19:03 successfully connected to MongoDB
+2025/10/14 15:50:24 failed to get username: record not found
+2025/10/14 15:50:31 failed to get username: record not found
+2025/10/14 15:50:37 failed to get username: record not found
+2025/10/17 06:43:22 &{0xc00034c3f0 <nil> 0 0xc00026c000 1}
+2025/10/17 06:43:25 successfully migrate database!
+2025/10/17 06:43:27 successfully connected to MongoDB

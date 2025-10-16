@@ -39,7 +39,7 @@ func SetupDatabase() {
 	}
 
 	log.Println("successfully migrate database!")
-	
+
 }
 
 func SetupMongoDB() {
@@ -60,4 +60,3 @@ func SetupMongoDB() {
 
 	log.Println("successfully connected to MongoDB")
 }
-
